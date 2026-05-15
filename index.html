@@ -931,6 +931,9 @@
     </div>
 
     <script>
+        // URL do Google Apps Script
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxfxZNElTBpMTxf6EGZpZraRJky5sl4_aJu57UitQJvO4s7GVUogLEy5x0RPxOsnlrl/exec';
+
         function startEvaluation() {
             const userName = document.getElementById('userNamePage1').value.trim();
             if (!userName) {
@@ -954,9 +957,55 @@
             nextPage(1);
         }
 
-        document.getElementById('questionForm').addEventListener('submit', function(e) {
+        document.getElementById('questionForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            nextPage(3);
+            
+            // Mostra mensagem de carregamento
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Enviando respostas...';
+            submitBtn.disabled = true;
+
+            try {
+                // Coleta os dados do formulário
+                const formData = new FormData(e.target);
+                const data = {
+                    nome: document.getElementById('userNamePage1').value,
+                    q1: formData.get('q1'),
+                    q2: formData.get('q2'),
+                    q3: formData.get('q3'),
+                    q4: formData.get('q4'),
+                    q5: formData.get('q5'),
+                    q6: formData.get('q6'),
+                    q7: formData.get('q7') || '',
+                    timestamp: new Date().toLocaleString('pt-BR')
+                };
+
+                // Envia para o Google Sheets
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                // Aguarda um pouco para garantir que foi enviado
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                // Vai para a página 3
+                nextPage(3);
+
+            } catch (error) {
+                console.error('Erro ao enviar dados:', error);
+                alert('Houve um erro ao enviar suas respostas. Vamos continuar, mas entre em contato com o RH se necessário.');
+                nextPage(3);
+            } finally {
+                // Restaura o botão
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
         });
     </script>
 </body>
